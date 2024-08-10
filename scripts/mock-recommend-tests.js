@@ -2,8 +2,26 @@ const fs = require('fs');
 const { execSync } = require('child_process');
 
 function getChangedFiles() {
-  const diffOutput = execSync('git diff --name-only origin/main...HEAD').toString();
-  return diffOutput.split('\n').filter(file => file.trim() !== '');
+  try {
+    // First, try to get the default branch name
+    const defaultBranch = execSync('git remote show origin | sed -n \'/HEAD branch/s/.*: //p\'').toString().trim();
+    console.log('Default branch:', defaultBranch);
+
+    // Then, use the default branch name in the diff command
+    const diffCommand = `git diff --name-only origin/${defaultBranch}...HEAD`;
+    console.log('Diff command:', diffCommand);
+
+    const diffOutput = execSync(diffCommand).toString();
+    const files = diffOutput.split('\n').filter(file => file.trim() !== '');
+    console.log('Changed files:', files);
+    return files;
+  } catch (error) {
+    console.error('Error getting changed files:', error);
+    // Fallback: return all files in the repository
+    const allFiles = execSync('git ls-files').toString().split('\n').filter(file => file.trim() !== '');
+    console.log('Fallback: Using all files:', allFiles);
+    return allFiles;
+  }
 }
 
 function mockAnalyzeCodeChanges(changedFiles) {
