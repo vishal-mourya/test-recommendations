@@ -3,6 +3,8 @@ name: Test Recommendations
 on:
   pull_request:
     types: [opened, synchronize]
+  pull_request_target:
+    types: [opened, synchronize]
 
 jobs:
   recommend-tests:
@@ -29,6 +31,13 @@ jobs:
           script: |
             const fs = require('fs');
             try {
+              console.log('Event name:', context.eventName);
+              console.log('Action:', context.action);
+              console.log('Ref:', context.ref);
+              console.log('SHA:', context.sha);
+              console.log('Repository:', context.repo.owner + '/' + context.repo.name);
+              console.log('Pull Request number:', context.issue.number);
+              
               const recommendations = JSON.parse(fs.readFileSync('test-recommendations.json', 'utf8'));
               console.log('Parsed recommendations:', recommendations);
               const checkboxes = recommendations.map(test => `- [ ] ${test}`).join('\n');
@@ -39,18 +48,25 @@ jobs:
                 pull_number: context.issue.number,
               });
               
+              console.log('Existing PR body:', pr.data.body);
+              
               const currentBody = pr.data.body || '';
               const newBody = `## Recommended Tests\n${checkboxes}\n\n${currentBody}`;
               
-              await github.rest.pulls.update({
+              console.log('New PR body:', newBody);
+              
+              const updateResult = await github.rest.pulls.update({
                 owner: context.repo.owner,
                 repo: context.repo.name,
                 pull_number: context.issue.number,
                 body: newBody
               });
+              
+              console.log('PR update result:', updateResult);
               console.log('PR description updated successfully');
             } catch (error) {
               console.error('Error updating PR description:', error);
               console.error('Error details:', error.message);
+              console.error('Error stack:', error.stack);
               core.setFailed(`Action failed with error: ${error}`);
             }
