@@ -1,0 +1,32 @@
+name: Test Recommendations
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  recommend-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+      - name: Generate Mock Test Recommendations
+        run: node scripts/mock-recommend-tests.js
+      - name: Update PR Description
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            const fs = require('fs');
+            const recommendations = JSON.parse(fs.readFileSync('test-recommendations.json', 'utf8'));
+            const checkboxes = recommendations.map(test => `- [ ] ${test}`).join('\n');
+            const prBody = `## Recommended Tests\n${checkboxes}\n\n${context.payload.pull_request.body || ''}`;
+            github.rest.pulls.update({
+              owner: context.repo.owner,
+              repo: context.repo.name,
+              pull_number: context.issue.number,
+              body: prBody
+            });
