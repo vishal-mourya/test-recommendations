@@ -3,6 +3,8 @@ name: Test Recommendations
 on:
   pull_request:
     types: [opened, synchronize]
+  pull_request_target:
+    types: [opened, synchronize]
 
 jobs:
   recommend-tests:
@@ -38,6 +40,10 @@ jobs:
               console.log('Parsed recommendations:', recommendations);
               const checkboxes = recommendations.map(test => `- [ ] ${test}`).join('\n');
               const commentBody = `## Recommended Tests\n${checkboxes}`;
+              
+              console.log('PR number:', context.issue.number);
+              console.log('Repo:', context.repo.owner + '/' + context.repo.name);
+              
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.name,
@@ -47,5 +53,6 @@ jobs:
               console.log('Comment added successfully');
             } catch (error) {
               console.error('Error adding comment:', error);
+              console.error('Error details:', error.message);
               core.setFailed(`Action failed with error: ${error}`);
             }
