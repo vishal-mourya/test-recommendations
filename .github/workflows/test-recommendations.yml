@@ -3,8 +3,6 @@ name: Test Recommendations
 on:
   pull_request:
     types: [opened, synchronize]
-  pull_request_target:
-    types: [opened, synchronize]
 
 jobs:
   recommend-tests:
@@ -14,12 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          fetch-depth: 0  # Fetch all history
-      - name: Debug Git Info
-        run: |
-          git branch
-          git remote -v
-          git status
+          fetch-depth: 0
       - name: Use Node.js
         uses: actions/setup-node@v2
         with:
@@ -29,7 +22,7 @@ jobs:
           node scripts/mock-recommend-tests.js
           echo "Content of test-recommendations.json:"
           cat test-recommendations.json
-      - name: Add Recommendations as Comment
+      - name: Update PR Description
         uses: actions/github-script@v6
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
@@ -39,20 +32,25 @@ jobs:
               const recommendations = JSON.parse(fs.readFileSync('test-recommendations.json', 'utf8'));
               console.log('Parsed recommendations:', recommendations);
               const checkboxes = recommendations.map(test => `- [ ] ${test}`).join('\n');
-              const commentBody = `## Recommended Tests\n${checkboxes}`;
               
-              console.log('PR number:', context.issue.number);
-              console.log('Repo:', context.repo.owner + '/' + context.repo.name);
-              
-              await github.rest.issues.createComment({
+              const pr = await github.rest.pulls.get({
                 owner: context.repo.owner,
                 repo: context.repo.name,
-                issue_number: context.issue.number,
-                body: commentBody
+                pull_number: context.issue.number,
               });
-              console.log('Comment added successfully');
+              
+              const currentBody = pr.data.body || '';
+              const newBody = `## Recommended Tests\n${checkboxes}\n\n${currentBody}`;
+              
+              await github.rest.pulls.update({
+                owner: context.repo.owner,
+                repo: context.repo.name,
+                pull_number: context.issue.number,
+                body: newBody
+              });
+              console.log('PR description updated successfully');
             } catch (error) {
-              console.error('Error adding comment:', error);
+              console.error('Error updating PR description:', error);
               console.error('Error details:', error.message);
               core.setFailed(`Action failed with error: ${error}`);
             }
