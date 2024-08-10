@@ -9,7 +9,7 @@ function getChangedFiles() {
 function mockAnalyzeCodeChanges(changedFiles) {
   console.log('Changed files:', changedFiles);
   
-  // Mock recommendation based on file types ojsjfdo
+  // Mock recommendation based on file types ojsjfdo isodj
   const recommendations = [];
   if (changedFiles.some(file => file.endsWith('.js'))) {
     recommendations.push('JavaScript Unit Tests');
