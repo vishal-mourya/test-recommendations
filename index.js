@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const { OpenAI } = require('openai');
 
-const openai = new OpenAI({ apiKey: "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" });
+const openai = new OpenAI({ apiKey: "OPENAI_API_KEY" });
 
 const USE_MOCK_DATA = true; // Set this to false when you want to use the real API
 
